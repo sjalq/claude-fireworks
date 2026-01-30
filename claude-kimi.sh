@@ -1,9 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_NAME="$(basename "$0")"
+# Handle piped execution (curl | bash) vs file execution
+if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "bash" && -f "${BASH_SOURCE[0]}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+    PIPED_INSTALL=0
+else
+    # Running from pipe - will need to download the script for install
+    SCRIPT_DIR=""
+    SCRIPT_NAME="claude-kimi.sh"
+    PIPED_INSTALL=1
+fi
 PROXY_PORT=4111
+SCRIPT_URL="https://raw.githubusercontent.com/sjalq/claude-fireworks/main/claude-kimi.sh"
 
 # ============================================
 # DIRECTORY SETUP (XDG compliant)
@@ -85,8 +95,8 @@ load_env_file() {
     done < "$env_file"
 }
 
-# Try XDG config location first, then script directory as fallback
-load_env_file "$CONFIG_DIR/.env" || load_env_file "$SCRIPT_DIR/.env" || true
+# Try XDG config location first, then script directory as fallback (if not piped)
+load_env_file "$CONFIG_DIR/.env" || { [[ -n "$SCRIPT_DIR" ]] && load_env_file "$SCRIPT_DIR/.env"; } || true
 
 # Default master key if still not set
 LITELLM_MASTER_KEY="${LITELLM_MASTER_KEY:-sk-local-fireworks-proxy}"
@@ -223,6 +233,19 @@ run_install() {
     echo "║           Claude + Fireworks AI - Installation                   ║"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
+
+    # Handle piped installation (curl | bash)
+    if [[ "$PIPED_INSTALL" -eq 1 ]]; then
+        echo "→ Detected piped installation, downloading script..."
+        local temp_script="/tmp/claude-kimi-$$.sh"
+        if ! curl -fsSL "$SCRIPT_URL" -o "$temp_script"; then
+            echo "✗ Failed to download script from $SCRIPT_URL"
+            exit 1
+        fi
+        chmod +x "$temp_script"
+        # Re-exec the downloaded script with same args
+        exec "$temp_script" "$@"
+    fi
 
     if [[ "$local_install" -eq 1 ]]; then
         install_dir="$SCRIPT_DIR"
