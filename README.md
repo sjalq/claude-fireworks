@@ -1,97 +1,98 @@
 # Claude Code with Fireworks AI
 
-Run [Claude Code](https://github.com/anthropics/claude-code) powered by Fireworks AI models (Kimi K2.5, Kimi K2 Instruct) instead of Anthropic's API.
+Run [Claude Code](https://github.com/anthropics/claude-code) powered by Fireworks AI models (Kimi K2.5) instead of Anthropic's API.
 
-## Quick Start
-
-```bash
-# Download and install
-curl -fsSL https://raw.githubusercontent.com/sjalq/claude-fireworks/main/claude-kimi.sh -o claude-kimi.sh
-chmod +x claude-kimi.sh
-./claude-kimi.sh --install
-
-# Run
-claude-kimi /path/to/project
-```
-
-## Requirements
-
-- [Claude Code CLI](https://github.com/anthropics/claude-code) (`npm install -g @anthropic-ai/claude-code`)
-- Python 3.8+
-- [Fireworks API key](https://fireworks.ai/account/api-keys)
-
-## How It Works
-
-The script runs a local [LiteLLM](https://github.com/BerriAI/litellm) proxy that translates Anthropic API calls to Fireworks AI. Claude Code connects to this proxy instead of Anthropic's servers.
-
-```
-Claude Code  -->  LiteLLM Proxy (localhost:4111)  -->  Fireworks AI
-```
-
-## Installation Options
+## One-Line Install
 
 ```bash
-# System install (adds to PATH)
-./claude-kimi.sh --install
-
-# Local install (current directory only)
-./claude-kimi.sh --install --local
-
-# Uninstall
-./claude-kimi.sh --uninstall
+curl -fsSL https://raw.githubusercontent.com/sjalq/claude-fireworks/main/claude-kimi.sh | bash -s -- --install
 ```
+
+This will:
+1. Download the script to `~/.local/bin/claude-kimi`
+2. Prompt you for your Fireworks API key
+3. Add to your PATH if needed
+
+Then run: `claude-kimi /path/to/project`
+
+---
+
+## Prerequisites
+
+Before installing, you need:
+
+### 1. Claude Code CLI
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 2. Python 3.8+
+
+Most systems have this. Check with: `python3 --version`
+
+### 3. Fireworks API Key
+
+1. Go to **https://fireworks.ai**
+2. Click **"Sign Up"** (or "Log In" if you have an account)
+3. After signing in, go to **https://fireworks.ai/account/api-keys**
+4. Click **"Create API Key"**
+5. Copy the key (starts with `fw_`)
+
+Keep this key ready - the installer will ask for it.
+
+---
 
 ## Usage
 
 ```bash
-# Basic usage
+# Open a project
 claude-kimi /path/to/project
 
-# Pass a prompt directly
+# Ask a question about a file
 claude-kimi -p "explain this code" file.ts
 
-# Use the lighter/faster model
+# Use the faster/lighter model
 claude-kimi --model kimi-k2-instruct
-
-# Provide API key via command line
-claude-kimi --fireworks-key fw_xxx /path/to/project
 ```
 
-## API Key Configuration
+## How It Works
 
-The script looks for your Fireworks API key in this order:
+```
+Claude Code  →  LiteLLM Proxy (localhost:4111)  →  Fireworks AI (Kimi K2.5)
+```
 
-1. `--fireworks-key <key>` command line argument
-2. `FIREWORKS_API_KEY` environment variable
-3. Config file:
-   - Linux: `~/.config/claude-fireworks/.env`
-   - macOS: `~/Library/Application Support/claude-fireworks/.env`
+The script runs a local proxy that translates Claude API calls to Fireworks AI.
 
-## Supported Models
+## Models
 
-| Model | Description | Use Case |
-|-------|-------------|----------|
-| `kimi-k2.5` | Full model (default) | Complex reasoning, coding |
-| `kimi-k2-instruct` | Lighter/faster | Simple tasks, quick responses |
+| Model | Best For |
+|-------|----------|
+| `kimi-k2.5` (default) | Complex coding, reasoning |
+| `kimi-k2-instruct` | Quick tasks, faster responses |
 
 ## Troubleshooting
 
-**Proxy won't start:**
-```bash
-# Check the log
-cat ~/.local/share/claude-fireworks/proxy.log
-```
-
-**Slow responses:**
-Check if you're hitting rate limits:
+**Slow responses?** You may be hitting rate limits. Check:
 ```bash
 grep -c "429" ~/.local/share/claude-fireworks/proxy.log
 ```
-Consider upgrading your Fireworks tier for higher rate limits.
+Upgrade your Fireworks tier for higher limits.
+
+**Proxy issues?** Check the log:
+```bash
+cat ~/.local/share/claude-fireworks/proxy.log
+```
 
 **Kill stuck proxy:**
 ```bash
 pkill -f "litellm.*4111"
+```
+
+## Uninstall
+
+```bash
+claude-kimi --uninstall
 ```
 
 ## License

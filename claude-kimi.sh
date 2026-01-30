@@ -315,7 +315,13 @@ run_install() {
 
     if [[ -f "$env_file" ]]; then
         echo "✓ Existing config found at: $env_file"
-        read -r -p "Do you want to update your API key? [y/N] " response || true
+        echo -n "Do you want to update your API key? [y/N] "
+        local response=""
+        if [[ -t 0 ]]; then
+            read -r response
+        elif [[ -e /dev/tty ]]; then
+            read -r response < /dev/tty
+        fi
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
             echo ""
             echo "═══════════════════════════════════════════════════════════════════"
@@ -333,18 +339,23 @@ run_install() {
     echo "Please enter your Fireworks API key (starts with 'fw_'):"
     local api_key=""
 
+    # Read from /dev/tty to support piped installs (curl | bash)
     if [[ -t 0 ]]; then
         # Interactive terminal - read silently
         read -r -s api_key
+    elif [[ -e /dev/tty ]]; then
+        # Piped input but terminal available - read from tty
+        read -r -s api_key < /dev/tty
     else
-        # Non-interactive (piped) - read from stdin
-        read -r api_key || true
+        # No terminal available - skip
+        api_key=""
     fi
     echo ""
 
     if [[ -z "${api_key:-}" ]]; then
         echo "✗ No API key provided. You can add it later to: $env_file"
-    elif [[ ! "$api_key" =~ ^fw_[a-zA-Z0-9]+$ ]]; then
+        echo "  Edit the file and add: FIREWORKS_API_KEY=fw_your_key_here"
+    elif [[ ! "$api_key" =~ ^fw_[a-zA-Z0-9_]+$ ]]; then
         echo "⚠ Warning: Key doesn't look like a Fireworks API key (should start with 'fw_')"
         echo "  Saving anyway. You can edit $env_file to fix it."
         echo "FIREWORKS_API_KEY=$api_key" > "$env_file"
@@ -416,7 +427,9 @@ run_uninstall() {
 
     # Ask about config
     if [[ -d "$CONFIG_DIR" ]]; then
-        read -r -p "Remove config directory ($CONFIG_DIR)? [y/N] " response || true
+        echo -n "Remove config directory ($CONFIG_DIR)? [y/N] "
+        local response=""
+        if [[ -t 0 ]]; then read -r response; elif [[ -e /dev/tty ]]; then read -r response < /dev/tty; fi
         if [[ "$response" =~ ^[Yy]$ ]]; then
             rm -rf "$CONFIG_DIR"
             echo "✓ Config removed"
@@ -427,7 +440,9 @@ run_uninstall() {
 
     # Ask about data directory
     if [[ -d "$DATA_DIR" && "$DATA_DIR" != "$CONFIG_DIR" ]]; then
-        read -r -p "Remove data directory ($DATA_DIR)? [y/N] " response || true
+        echo -n "Remove data directory ($DATA_DIR)? [y/N] "
+        local response=""
+        if [[ -t 0 ]]; then read -r response; elif [[ -e /dev/tty ]]; then read -r response < /dev/tty; fi
         if [[ "$response" =~ ^[Yy]$ ]]; then
             rm -rf "$DATA_DIR"
             echo "✓ Data directory removed"

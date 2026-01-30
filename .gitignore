@@ -6,3 +6,4 @@ test-install/
 config.yaml
 *.pyc
 __pycache__/
+stop.sh
