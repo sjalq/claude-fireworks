@@ -38,8 +38,7 @@ LOCK_FILE="$DATA_DIR/.proxy.lock"
 PROXY_PID_FILE="$DATA_DIR/.proxy.pid"
 PROXY_LOG_FILE="$DATA_DIR/proxy.log"
 
-# Initialize variables that cleanup might reference
-WE_STARTED_PROXY=0
+# Track proxy PID if we start one
 PROXY_PID=""
 
 # ============================================
@@ -48,17 +47,9 @@ PROXY_PID=""
 
 cleanup() {
     local exit_code=$?
-
     rm -f "$LOCK_FILE" 2>/dev/null || true
-
-    if [[ "$WE_STARTED_PROXY" -eq 1 && -n "$PROXY_PID" ]]; then
-        if kill -0 "$PROXY_PID" 2>/dev/null; then
-            echo "Stopping LiteLLM proxy (PID: $PROXY_PID)..."
-            kill "$PROXY_PID" 2>/dev/null || true
-            rm -f "$PROXY_PID_FILE" 2>/dev/null || true
-        fi
-    fi
-
+    # Don't kill proxy - other sessions may be using it.
+    # Proxy stays running (lightweight). Use --stop-proxy to kill manually.
     exit $exit_code
 }
 
@@ -119,6 +110,7 @@ INSTALLATION:
   ./claude-kimi.sh --install         Install to system PATH
   ./claude-kimi.sh --install --local Install to current directory only
   ./claude-kimi.sh --uninstall       Remove from system PATH
+  ./claude-kimi.sh --stop-proxy      Stop the background proxy
 
 USAGE:
   claude-kimi --fireworks-key <key> [claude-args...]
@@ -502,6 +494,21 @@ for arg in "$@"; do
         --uninstall)
             run_uninstall
             ;;
+        --stop-proxy)
+            if [[ -f "$PROXY_PID_FILE" ]]; then
+                pid=$(cat "$PROXY_PID_FILE" 2>/dev/null) || true
+                if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+                    kill "$pid" 2>/dev/null
+                    echo "Proxy stopped (PID $pid)"
+                else
+                    echo "Proxy not running"
+                fi
+                rm -f "$PROXY_PID_FILE"
+            else
+                echo "No proxy PID file found"
+            fi
+            exit 0
+            ;;
         --help|-h)
             show_install_help
             exit 0
@@ -811,7 +818,6 @@ if [[ "$NEED_START" -eq 1 ]]; then
         cd - > /dev/null
 
         PROXY_PID=$!
-        WE_STARTED_PROXY=1
         echo "$PROXY_PID" > "$PROXY_PID_FILE"
 
         # Wait for proxy to be ready
