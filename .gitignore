@@ -1,0 +1,8 @@
+.env
+proxy.log
+.proxy.pid
+.claude/
+test-install/
+config.yaml
+*.pyc
+__pycache__/
