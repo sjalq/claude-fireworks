@@ -125,10 +125,11 @@ CONFIG LOCATIONS:
   macOS:  ~/Library/Application Support/claude-fireworks/.env
 
 GETTING A FIREWORKS API KEY:
-  1. Visit: https://fireworks.ai/account/api-keys
-  2. Sign up or log in to your account
-  3. Click "Create API Key"
-  4. Copy the key (starts with "fw_")
+  1. Go to: https://fireworks.ai
+  2. Click "Sign Up" (or "Log In" if you have an account)
+  3. After signing in, go to: https://fireworks.ai/account/api-keys
+  4. Click "Create API Key"
+  5. Copy the key (starts with "fw_")
 
 SUPPORTED MODELS:
   - kimi-k2.5 (default) - Best for complex reasoning
@@ -308,7 +309,12 @@ run_install() {
     echo ""
     echo "To use Claude with Fireworks AI, you need a Fireworks API key."
     echo ""
-    echo "Get your key at: https://fireworks.ai/account/api-keys"
+    echo "Steps to get your key:"
+    echo "  1. Go to: https://fireworks.ai"
+    echo "  2. Click 'Sign Up' (or 'Log In' if you have an account)"
+    echo "  3. After signing in, go to: https://fireworks.ai/account/api-keys"
+    echo "  4. Click 'Create API Key'"
+    echo "  5. Copy the key (starts with 'fw_')"
     echo ""
 
     local env_file="$CONFIG_DIR/.env"
